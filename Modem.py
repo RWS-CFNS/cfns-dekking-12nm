@@ -23,7 +23,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
+  
 #Library imports
 import subprocess
 from sys import stdout
@@ -34,6 +34,8 @@ import paramiko, csv, os, re, time, socket, math
 # Update the next three lines with your
 # server's information
 
+#TODO: DO NOT hardcode these parameters in the modules. Set these into variables in the 'main' module, or (even better),
+#       set them in a seperate 'settings' file.
 host = "192.168.50.1"
 username = "admin"
 password = ""
@@ -70,6 +72,7 @@ def SSHgetData(client, command):
     print("Success!")
 
     stdout=stdout.readlines()
+    #TODO: show raw data in code comments. Usefull for unit testing and readability. 
 
     output=""
     for line in stdout:
@@ -78,6 +81,7 @@ def SSHgetData(client, command):
     return output
 
 def parseData(data):
+    #TODO: show raw data in code comments. Usefull for unit testing and readability. 
     print ("parsing data...")
     if "Connected" not in data:
         print ("Invalid data.")
@@ -178,6 +182,8 @@ def WriteToCSV():
         return
     gps = getGPS()
 
+    #TODO: DO NOT hardcode these parameters in the modules. Set these into variables in the 'main' module, or (even better),
+    #       set them in a seperate 'settings' file.
     with open('modem.csv', 'w', newline='') as output_fn:
         timeStamp = datetime.now().strftime('%d-%m-%Y %H:%M')
         wr = csv.writer(output_fn, quoting=csv.QUOTE_NONE, escapechar=' ', delimiter= ',')

@@ -27,11 +27,15 @@ THE SOFTWARE.
 import time
 from datetime import datetime
 from serial import *
+ #TODO: do we need to import 'os'? As far as I can see, it is not used.
 import os
 import subprocess
 
 #Serial paramaters
 ser = Serial()        
+
+#TODO: choose serial port dynamically: hardcoded port is not reliable (enough). Unix assigns the port on plugin of USB device.
+#       check device name of each seial port to choose the correct one.
 ser.port        = '/dev/ttyUSB0'                                                # choose serial port where device is plugged in
 ser.baudrate    = 19200                                                         # default baud rate is 19200
 ser.bytesize    = EIGHTBITS
@@ -40,28 +44,40 @@ ser.stopbits    = STOPBITS_ONE
 
 #export file
 fname = 'maximet.csv'
-
-
-
   
+
+#TODO: factor out the serial operation, with error checking, catch timeout, etc.
 # open serial 
 ser.open()                                                                                                               
 
 #read everything on the serial
 rawdata = ser.readline()
 #substring only the data and not start & ending chars
+#TODO: show raw data in code comments. Usefull for unit testing and readability. 
+#       Usually it is best to check the length of the data, and cut the first and last chars.
+#       If length of data is less than 36 chars, last char is not cut.
 subdata = rawdata[1:36]
 
+#TODO: serial connection is never closed.
+
+
+
+#TODO: factor out the file interactions 
+#TODO: Why do we need to record the starttime? Variable is never used again.
 #start timer
 starttime = time.time()
+#TODO: WHAT DOES THIS DO??? fname ('maximet.csv') is not a valid argument for strftime. filename will be exactly the same as fname.
 filename = time.strftime(fname)
+#TODO: this variable is never used again. Why do we need it?
 fileInterval = 55
 
-#Open fname and write substring to file       
+#Open fname and write substring to file    
+#TODO: why open the file in binary mode?
 fid = open(filename,'wb')
 fid.write(subdata)
 fid.close()
-    
+
+#TODO: WHY CLOSE THE FILE AND REOPEN IT ON THE NEXT LINE???    
 #Open fname and write timestamp to file
 fid = open(filename,'+a')
 fid.write(',')
@@ -69,9 +85,15 @@ timeStamp = datetime.now().strftime('%d-%m-%Y %H:%M')
 fid.write(timeStamp)
 fid.close()
 
+
+
 #print written data in console
 print (subdata)
 print (timeStamp)
 
+#TODO: question: why do we need to write to csv and import that csv into the database seperately?
+#       If there is a reason, document it properly. Else, create a (python) database interation module instead.
+#TODO: DO NOT hardcode these parameters in the modules. Set these into variables in the 'main' module, or (even better),
+#       set them in a seperate 'settings' file.
 #run PostgreSQL command to copy th file to a database via commandline
 subprocess.run(["psql", "-f", "/home/cfns/systemtest/copy.sql", "postgres://postgres:stagecfns@localhost:5432/postgres"])
