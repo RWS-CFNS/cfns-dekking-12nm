@@ -36,48 +36,72 @@ import paramiko, csv, os, re, time, socket, math
 
 host = "192.168.50.1"
 username = "admin"
-password = "" 
+password = ""
 port = "8822"
 MNO = ""
 com = "get system"
 
-
-def getData(com):
-
-    output=""
+def connectSSH():
+    print ("Connecting to server via SSH...")
     client = paramiko.client.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(host, username=username, password=password, port=port)
+    try:
+        client.connect(host, username=username, password=password, port=port)
+    except:
+        print ("Connecting not successfull.")
+        return None
+    Print("Success!")
+    return client
 
-
-    stdin, stdout, stderr = client.exec_command(com)
-    print ("ssh succuessful. Closing connection")
-    stdout=stdout.readlines()
+def disconnectSSH(client):
+    #will close the SSH connection
+    print ("Closing the SSH connection...")
     client.close()
+    return
+    
+def SSHgetData(client, command):
+    #will execute a command in the SSH server. Will concat all return lines.
+    print ("Executing command on server: '" + command + "'")
+    try:
+        stdin, stdout, stderr = client.exec_command(command)
+    except:
+        print ("Failed to execute command.")
+        return ",,,"
+    print("Success!")
 
+    stdout=stdout.readlines()
+
+    output=""
     for line in stdout:
         output=output+line
-    #als er geen verbinding is houdt het leeg
-    if "Connected" not in output:
-        print ("Not connected")
-        Signalstrength = ",,,"
-        return Signalstrength
-        
+
+    return output
+
+def parseData(data):
+    print ("parsing data...")
+    if "Connected" not in data:
+        print ("Invalid data.")
+        return ",,,"
     else:
-        print (output)
+        print (data)
         
-    SINR = re.search('SINR                       : (.*)dB', output)
-    RSRP = re.search('RSRP                       : (.*)dB', output)
-    RSRQ = re.search('RSRQ                       : (.*)dB', output)
-    conn = re.search('Network                    : (.*)\n', output)
+    SINR = re.search('SINR                       : (.*)dB', data)
+    RSRP = re.search('RSRP                       : (.*)dB', data)
+    RSRQ = re.search('RSRQ                       : (.*)dB', data)
+    conn = re.search('Network                    : (.*)\n', data)
     
     SINRres = SINR.group(1)
     RSRPres = RSRP.group(1)
     RSRQres = RSRQ.group(1)
     connres = conn.group(1)
+
     Signalstrength =  RSRQres + "," + RSRPres + "," + SINRres + ","  + connres
     
     return Signalstrength
+
+def getData(client, com):
+    data = SSHgetData(client, com)
+    return parseData(data)
 
 def getGPS():
     thePort = 60660
@@ -149,16 +173,26 @@ def getGPS():
     return gps
 
 def WriteToCSV():
+    client = connectSSH()
+    if client is None:
+        return
+    gps = getGPS()
+
     with open('modem.csv', 'w', newline='') as output_fn:
         timeStamp = datetime.now().strftime('%d-%m-%Y %H:%M')
         wr = csv.writer(output_fn, quoting=csv.QUOTE_NONE, escapechar=' ', delimiter= ',')
         print("writing to csv...")
         wr.writerow(["mno, RSRQ, RSRP, SINR, type, tijd, lat, long"]) 
-        wr.writerow(["Vodafone", getData("get wan 4"), timeStamp, getGPS()])   
-        wr.writerow(["T-Mobile", getData("get wan 5"), timeStamp, getGPS()]) 
-        wr.writerow(["KPN", getData("get wan 6"), timeStamp, getGPS()]) 
-        wr.writerow(["Tampnet", getData("get wan 7"), timeStamp, getGPS()]) 
-    #print(getData("get wan 4"))
+        wr.writerow(["Vodafone", getData(client, "get wan 4"), timeStamp, gps])   
+        wr.writerow(["T-Mobile", getData(client, "get wan 5"), timeStamp, gps]) 
+        wr.writerow(["KPN", getData(client, "get wan 6"), timeStamp, gps]) 
+        wr.writerow(["Tampnet", getData(client, "get wan 7"), timeStamp, gps]) 
+
+    disconnectSSH(client)
+
+def insertCSVtoDB:
+    print("inserting CSV file into database...")
     subprocess.run(["psql",  "-f", "/home/cfns/systemtest/copymodem.sql", "postgres://postgres:stagecfns@localhost:5432/postgres"])
-    
+
 WriteToCSV()
+insertCSVtoDB()
