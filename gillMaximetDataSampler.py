@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This program allows you to sample data from a Gill Maximet Weather station
+This program allows you to sample data from a Gill Maximet Weather station, type 'GMX500'
 Here, the output is in a certain configuration but the program will work in any mode, just change the Copy.sql file accordingly.
 The program generates a new text file in the same folder as this program every 1 min and writes the data.
 
@@ -35,7 +35,7 @@ import subprocess
 ser = Serial()        
 
 #TODO: choose serial port dynamically: hardcoded port is not reliable (enough). Unix assigns the port on plugin of USB device.
-#       check device name of each seial port to choose the correct one.
+#       check device name of each seial port to choose the correct one (for example using serial.tools.list_ports)
 ser.port        = '/dev/ttyUSB0'                                                # choose serial port where device is plugged in
 ser.baudrate    = 19200                                                         # default baud rate is 19200
 ser.bytesize    = EIGHTBITS
@@ -44,7 +44,6 @@ ser.stopbits    = STOPBITS_ONE
 
 #export file
 fname = 'maximet.csv'
-  
 
 #TODO: factor out the serial operation, with error checking, catch timeout, etc.
 # open serial 
@@ -53,10 +52,15 @@ ser.open()
 #read everything on the serial
 rawdata = ser.readline()
 #substring only the data and not start & ending chars
+subdata = rawdata[1:36]
 #TODO: show raw data in code comments. Usefull for unit testing and readability. 
 #       Usually it is best to check the length of the data, and cut the first and last chars.
 #       If length of data is less than 36 chars, last char is not cut.
-subdata = rawdata[1:36]
+#TODO: according to Maximet documentation, different serial communications can be used and several protocols. Please 
+#       specify which are used.
+
+#TODO: standard checksums are included in the data according to Maximet documentation. Add checksum compare to make 
+#       sure data in intact, instead of cutting the checksum chars off.
 
 #TODO: serial connection is never closed.
 
