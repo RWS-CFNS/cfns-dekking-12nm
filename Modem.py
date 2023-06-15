@@ -36,7 +36,7 @@ import paramiko, csv, os, re, time, socket, math
 
 host = "192.168.50.1"
 username = "admin"
-password = ""
+password = "" 
 port = "8822"
 MNO = ""
 com = "get system"
